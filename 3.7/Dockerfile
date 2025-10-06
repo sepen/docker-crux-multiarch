@@ -3,7 +3,7 @@
 
 # Builder stage to unpack the relevant rootfs tarball
 #FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS intermediate
-FROM --platform=$BUILDPLATFORM sepen/crux-multiarch:3.7 AS intermediate
+FROM --platform=$BUILDPLATFORM docker.io/sepen/crux-multiarch:3.7 AS intermediate
 
 # Enable buildkit args for multi-arch builds
 #

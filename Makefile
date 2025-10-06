@@ -5,6 +5,7 @@ BASE_DIR := $(shell cd $(dir $(realpath $(lastword $(MAKEFILE_LIST)))) && pwd)
 IMAGE_NAME ?= sepen/crux-multiarch
 PLATFORMS ?= linux/amd64 linux/arm64 linux/arm/v7
 FOLDERS := 3.7 3.8
+LATEST := 3.8
 
 # Detect docker or podman
 HAVE_DOCKER := $(shell command -v docker 2>/dev/null)
@@ -59,7 +60,7 @@ ifeq ($(ENGINE),docker)
 build: prepare
 	@echo ">> Building multi-arch image (no push)"
 	@for FOLDER in $(FOLDERS); do \
-		docker buildx build --platform=$(PLATFORMS) \
+		docker buildx build --platform=$(shell echo $(PLATFORMS) | tr ' ' ',') \
 			-t $(IMAGE_NAME):$$FOLDER \
 			-f $(BASE_DIR)/$$FOLDER/Dockerfile \
 			--load \
@@ -69,11 +70,20 @@ build: prepare
 push: prepare
 	@echo ">> Building and pushing multi-arch image"
 	@for FOLDER in $(FOLDERS); do \
-		docker buildx build --platform=$(PLATFORMS) \
-			-t $(IMAGE_NAME):$$FOLDER \
-			-f $(BASE_DIR)/$$FOLDER/Dockerfile \
-			--push \
-			$(BASE_DIR)/$$FOLDER ; \
+		if [ "$$FOLDER" = "$(LATEST)" ]; then \
+			docker buildx build --platform=$(shell echo $(PLATFORMS) | tr ' ' ',') \
+				-t $(IMAGE_NAME):$$FOLDER \
+				-t $(IMAGE_NAME):latest \
+				-f $(BASE_DIR)/$$FOLDER/Dockerfile \
+				--push \
+				$(BASE_DIR)/$$FOLDER ; \
+		else \
+			docker buildx build --platform=$(shell echo $(PLATFORMS) | tr ' ' ',') \
+				-t $(IMAGE_NAME):$$FOLDER \
+				-f $(BASE_DIR)/$$FOLDER/Dockerfile \
+				--push \
+				$(BASE_DIR)/$$FOLDER ; \
+		fi ; \
 	done
 
 manifest:
@@ -112,9 +122,18 @@ build: prepare
 
 push:
 	@for FOLDER in $(FOLDERS); do \
-		echo ">> Pushing manifest $(IMAGE_NAME):$$FOLDER to Docker Hub"; \
-		podman manifest push --all $(IMAGE_NAME):$$FOLDER \
-			docker://docker.io/$(IMAGE_NAME):$$FOLDER ; \
+		if [ "$$FOLDER" = "$(LATEST)" ]; then \
+			echo ">> Pushing manifest $(IMAGE_NAME):$$FOLDER and latest to Docker Hub"; \
+			podman tag $(IMAGE_NAME):$$FOLDER $(IMAGE_NAME):latest ; \
+			podman manifest push --all $(IMAGE_NAME):$$FOLDER \
+				docker://docker.io/$(IMAGE_NAME):$$FOLDER ; \
+			podman manifest push --all $(IMAGE_NAME):latest \
+				docker://docker.io/$(IMAGE_NAME):latest ; \
+		else \
+			echo ">> Pushing manifest $(IMAGE_NAME):$$FOLDER to Docker Hub"; \
+			podman manifest push --all $(IMAGE_NAME):$$FOLDER \
+				docker://docker.io/$(IMAGE_NAME):$$FOLDER ; \
+		fi ; \
 	done
 
 manifest:

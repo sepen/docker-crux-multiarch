@@ -32,7 +32,7 @@ arm64v8.rootfs.tar:
 	curl -C - -LO https://master.dl.sourceforge.net/project/crux-arm/releases/3.7/crux-arm-3.7-aarch64-rc5.rootfs.tar.xz
 	mkdir -p .arm64v8.tmp/rootfs
 	unxz -k -c crux-arm-3.7-aarch64-rc5.rootfs.tar.xz > .arm64v8.tmp/rootfs/crux-arm-3.7-aarch64-rc5.rootfs.tar
-	tar --delete -f .arm64v8.tmp/rootfs/crux-arm-3.7-aarch64-rc5.rootfs.tar dev/console boot/ lib/firmware/ /lib/modules/
+	tar --delete -f .arm64v8.tmp/rootfs/crux-arm-3.7-aarch64-rc5.rootfs.tar dev/console boot/ lib/firmware/ lib/modules/
 	mv .arm64v8.tmp/rootfs/crux-arm-3.7-aarch64-rc5.rootfs.tar arm64v8.rootfs.tar
 	rm -rf .arm64v8.tmp
 

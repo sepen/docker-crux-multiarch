@@ -2,7 +2,7 @@
 # Multi-arch Dockerfile for CRUX 3.8
 
 # Builder stage to unpack the relevant rootfs tarball
-FROM --platform=$BUILDPLATFORM sepen/crux-multiarch:3.7 AS intermediate
+FROM --platform=$BUILDPLATFORM docker.io/sepen/crux-multiarch:3.7 AS intermediate
 
 # Enable buildkit args for multi-arch builds
 #
@@ -40,6 +40,22 @@ RUN if [ -d /rootfs/media/crux ] && ls /rootfs/media/crux/core/*.pkg.tar.* >/dev
     else \
       echo "No CRUX packages found, skipping"; \
     fi
+
+# COPY configuration files
+COPY files/ /files
+RUN if [ ${TARGETARCH} = "amd64" ]; then \
+      echo "Applying x86_64 configuration"; \
+      cp /files/x86_64/*.conf /rootfs/etc/; \
+    elif [ ${TARGETARCH} = "arm64" ]; then \
+      echo "Applying arm64 configuration"; \
+      cp /files/arm64/*.conf /rootfs/etc/; \
+    elif [ ${TARGETARCH} = "arm" ] && [ ${TARGETVARIANT} = "v7" ]; then \
+      echo "Applying armhf configuration"; \
+      cp /files/armhf/*.conf /rootfs/etc/; \
+    else \
+      echo "No specific configuration for ${TARGETARCH}${TARGETVARIANT}, skipping"; \
+    fi && \
+    cp /files/common/*.conf /rootfs/etc/
 
 # Final stage
 FROM scratch
